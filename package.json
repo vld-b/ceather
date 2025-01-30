@@ -16,6 +16,7 @@
     "vite-plugin-solid": "^2.11.0"
   },
   "dependencies": {
+    "openmeteo": "^1.1.4",
     "solid-js": "^1.9.3"
   }
 }
