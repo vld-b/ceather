@@ -1,0 +1,96 @@
+:root {
+  --accent-color: white;
+  font-size: 16px;
+}
+
+.App {
+  color: var(--accent-color);
+  margin: 0;
+  padding: 0;
+  height: auto;
+  width: 100%;
+  margin: 0 calc(100vw - 100%) 0 0;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.forecast {
+  display: flex;
+  max-width: 100%;
+  margin: 0 calc(100vw - 100%) 0 0;
+  display: flex;
+  flex-direction: row;
+  overflow-x: scroll;
+}
+
+.forecastTile {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 10rem;
+  width: 10rem;
+  border: 4px rgba(255, 255, 255, 0.1) solid;
+  border-radius: 10px;
+  margin: 2rem .5rem;
+  color: var(--accent-color);
+}
+
+h1 {
+  display: flex;
+  flex-direction: row;
+  background: transparent;
+  animation: fadeIn 5s cubic-bezier(1, 0, 0, 1);
+  font-size: 5rem;
+  margin: 1rem auto;
+}
+
+h3 {
+  font-size: 2rem;
+  padding: 0;
+  margin: .5rem;
+}
+
+.loadingCube {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  height: 5rem;
+  width: 5rem;
+  background: transparent;
+  border-top: white 1rem solid;
+  border-bottom: transparent 1rem solid;
+  border-left: transparent 1rem solid;
+  border-right: transparent 1rem solid;
+  border-radius: 9999px;
+  animation: loadingFade 2s linear infinite;
+}
+
+@keyframes fadeIn {
+  from {
+    transform: translate(0, -50%);
+    opacity: 0;
+  }
+  to {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+}
+
+.welcomeContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: transparent;
+  margin: 10rem 0;
+}
+
+@keyframes loadingFade {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
