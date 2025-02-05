@@ -4,6 +4,9 @@
 }
 
 .App {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
   color: var(--accent-color);
   margin: 0;
   padding: 0;
@@ -16,24 +19,33 @@
 
 .forecast {
   display: flex;
+  min-width: 100%;
   max-width: 100%;
-  margin: 0 calc(100vw - 100%) 0 0;
+  margin: 0;
   display: flex;
   flex-direction: row;
   overflow-x: scroll;
 }
 
+.forecastData {
+  font-size: 2rem;
+  padding: 0;
+  margin: .5rem;
+}
+
 .forecastTile {
   display: flex;
+  flex: 0 0 20rem;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  height: 10rem;
-  width: 10rem;
-  border: 4px rgba(255, 255, 255, 0.1) solid;
+  color: var(--accent-color);
+  box-shadow: 0 0 4px 4px rgba(255, 255, 255, .2);
+  height: 20rem;
+  width: 20rem;
+  border: 4px rgba(255, 255, 255, .2) solid;
   border-radius: 10px;
   margin: 2rem .5rem;
-  color: var(--accent-color);
 }
 
 h1 {
@@ -45,10 +57,8 @@ h1 {
   margin: 1rem auto;
 }
 
-h3 {
-  font-size: 2rem;
-  padding: 0;
-  margin: .5rem;
+html {
+  overflow-x: hidden;
 }
 
 .loadingCube {
@@ -67,6 +77,14 @@ h3 {
   animation: loadingFade 2s linear infinite;
 }
 
+.welcomeContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: transparent;
+  margin: 10rem 0;
+}
+
 @keyframes fadeIn {
   from {
     transform: translate(0, -50%);
@@ -76,14 +94,6 @@ h3 {
     transform: translate(0, 0);
     opacity: 1;
   }
-}
-
-.welcomeContainer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: transparent;
-  margin: 10rem 0;
 }
 
 @keyframes loadingFade {

@@ -1,15 +1,17 @@
 import "./App.css";
 
 import { createSignal, onMount, Show, type Component, type Signal } from "solid-js";
+import { render } from "solid-js/web";
 import { fetchWeatherApi } from "openmeteo";
 import { getTimes } from "suncalc";
 
 let latitude: number = 0;
 let longitude: number = 0;
+let scrollbarWidth: number = 0;
 
-let [currentTime, setCurrentTime]: Signal<Date> = createSignal<Date>(new Date(Date.now()));
-let [sunUp, setSunUp]: Signal<boolean> = createSignal<boolean>(false);
-let [gotData, setGotData]: Signal<boolean> = createSignal<boolean>(false);
+const [currentTime, setCurrentTime]: Signal<Date> = createSignal<Date>(new Date(Date.now()));
+const [sunUp, setSunUp]: Signal<boolean> = createSignal<boolean>(false);
+const [gotData, setGotData]: Signal<boolean> = createSignal<boolean>(false);
 
 let params = {};
 const url = "https://api.open-meteo.com/v1/forecast";
@@ -17,16 +19,19 @@ let [weatherData, setWeatherData]: Signal<{
   hourly: {
     time: Date[];
     temperature_2m: Float32Array;
+    cloud: Float32Array;
   }
 }> = createSignal<{
   hourly: {
     time: Date[];
     temperature_2m: Float32Array;
+    cloud: Float32Array;
   }
 }>({
   hourly: {
     time: [],
     temperature_2m: new Float32Array(),
+    cloud: new Float32Array(),
   },
 });
 
@@ -44,6 +49,14 @@ const Loading: Component = () => {
   );
 }
 
+const WeatherModule: Component = (props) => {
+  return(
+    <h3 class="forecastData">
+      {props.children}
+    </h3>
+  );
+}
+
 const App: Component = () => {
   onMount(() => {
     if ("geolocation" in navigator) {
@@ -55,18 +68,18 @@ const App: Component = () => {
         params = {
           longitude: longitude,
           latitude: latitude,
-          hourly: "temperature_2m",
+          hourly: ["temperature_2m", "cloud_cover"],
         };
         const responses = await fetchWeatherApi(url, params);
 
-        // Helper function to form time ranges
+        // Helper function to form time ranges (from the API docs)
         const range = (start: number, stop: number, step: number) => 
           Array.from({ length: (stop - start) / step }, (_, i) => start + i * step);
 
         // only the first response is needed
         const response = responses[0];
 
-        // Attributes for timezone and location
+        // Attributes for timezone and location (from the API docs)
         const utcOffsetSeconds = response.utcOffsetSeconds();
         const hourly = response.hourly()!;
 
@@ -76,28 +89,41 @@ const App: Component = () => {
               (t) => new Date((t+utcOffsetSeconds)*1000)
             ),
             temperature_2m: hourly.variables(0)!.valuesArray()!.map((t) => Number(t.toString().slice(0, 2))),
+            cloud: hourly.variables(1)!.valuesArray()!,
           },
         }); 
 
         for (let i = 0; i < weatherData().hourly.time.length; i++) {
-          console.log(weatherData().hourly.time[i].toISOString() + ": " + weatherData().hourly.temperature_2m[i]);
+          console.log(weatherData().hourly.time[i].toISOString() + ": " + weatherData().hourly.temperature_2m[i] + " ; " + weatherData().hourly.cloud[i]);
         }
         
         const forecastEl = document.querySelector(".forecast");
         if (forecastEl) {
           for (let i = 0; i < 48; ++i) {
-            const element = document.createElement('div');
-            element.className = 'forecastTile';
-            element.innerHTML = `
-              <h3 class="forecastData">${formatTime(weatherData().hourly.time[i+currentTime().getHours()].getHours())}:00</h3>
-              <h3 class="forecastData">${weatherData().hourly.temperature_2m[i+currentTime().getHours()]}°C</h3>
-            `;
-            forecastEl.appendChild(element);
+            let cloudy = weatherData().hourly.cloud[i+currentTime().getHours()];
+            const element = <div class="forecastTile">
+            <WeatherModule>{formatTime(weatherData().hourly.time[i+currentTime().getHours()].getHours())}:00</WeatherModule>
+            <WeatherModule>{weatherData().hourly.temperature_2m[i+currentTime().getHours()]}°C</WeatherModule>
+            <WeatherModule>{cloudy}%
+              <Show when={cloudy < 33}>
+                <i class="fa-solid fa-sun"></i>
+              </Show>
+              <Show when={67 > cloudy && cloudy >= 33}>
+                <i class="fa-solid fa-cloud-sun"></i>
+              </Show>
+              <Show when={cloudy >= 67}>
+              <i class="fa-solid fa-cloud"></i>
+              </Show>
+            </WeatherModule>
+          </div>;
+            render(() => element, forecastEl);
           }
         }
 
         setGotData(true);
-      });      console.log("Geolocation is not available");
+      });
+    } else {
+      console.log("Geolocation is not available");
     }
     // Calculate whether the sun is up or down
     const times = getTimes(new Date(), latitude, longitude);
@@ -110,10 +136,9 @@ const App: Component = () => {
       appComponent.style.background = "rgb(9, 9, 121)";
       appComponent.style.background = "linear-gradient(0deg, rgba(9,9,121,1) 0%, rgba(0,114,255,1) 100%)";
     }
-    appComponent.style.width = document.body.clientWidth + "px";
-
+    
     document.onresize = () => {
-      appComponent.style.margin = "0 calc(100dvw - 100%) 0 0";
+      appComponent.style.width = document.body.clientWidth + "px";
     };
   });
 
