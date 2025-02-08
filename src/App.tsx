@@ -5,9 +5,11 @@ import { render } from "solid-js/web";
 import { fetchWeatherApi } from "openmeteo";
 import { getTimes } from "suncalc";
 
+import { WeatherModule, Loading } from "./Components";
+import { formatTime } from "./utils";
+
 let latitude: number = 0;
 let longitude: number = 0;
-let scrollbarWidth: number = 0;
 
 const [currentTime, setCurrentTime]: Signal<Date> = createSignal<Date>(new Date(Date.now()));
 const [sunUp, setSunUp]: Signal<boolean> = createSignal<boolean>(false);
@@ -17,15 +19,25 @@ let params = {};
 const url = "https://api.open-meteo.com/v1/forecast";
 let [weatherData, setWeatherData]: Signal<{
   hourly: {
-    time: Date[];
-    temperature_2m: Float32Array;
-    cloud: Float32Array;
+    time: Date[],
+    temperature_2m: Float32Array,
+    cloud: Float32Array,
+  },
+  current: {
+    rel_humidity_2m: number,
+    wind_speed: number,
+    wind_direction: number,
   }
 }> = createSignal<{
   hourly: {
-    time: Date[];
-    temperature_2m: Float32Array;
-    cloud: Float32Array;
+    time: Date[],
+    temperature_2m: Float32Array,
+    cloud: Float32Array,
+  },
+  current: {
+    rel_humidity_2m: number,
+    wind_speed: number,
+    wind_direction: number,
   }
 }>({
   hourly: {
@@ -33,29 +45,12 @@ let [weatherData, setWeatherData]: Signal<{
     temperature_2m: new Float32Array(),
     cloud: new Float32Array(),
   },
-});
-
-function formatTime(num: number) {
-  if (num.toString().length === 1) {
-    return ("0" + num.toString()).toString();
-  } else {
-    return num.toString();
+  current: {
+    rel_humidity_2m: 0,
+    wind_speed: 0,
+    wind_direction: 0,
   }
-}
-
-const Loading: Component = () => {
-  return (
-    <div class="loadingCube"></div>
-  );
-}
-
-const WeatherModule: Component = (props) => {
-  return(
-    <h3 class="forecastData">
-      {props.children}
-    </h3>
-  );
-}
+});
 
 const App: Component = () => {
   onMount(() => {
@@ -69,6 +64,7 @@ const App: Component = () => {
           longitude: longitude,
           latitude: latitude,
           hourly: ["temperature_2m", "cloud_cover"],
+          current: ["relative_humidity_2m", "wind_speed_10m", "wind_direction_10m"],
         };
         const responses = await fetchWeatherApi(url, params);
 
@@ -82,6 +78,7 @@ const App: Component = () => {
         // Attributes for timezone and location (from the API docs)
         const utcOffsetSeconds = response.utcOffsetSeconds();
         const hourly = response.hourly()!;
+        const current = response.current()!;
 
         setWeatherData({
           hourly: {
@@ -91,6 +88,11 @@ const App: Component = () => {
             temperature_2m: hourly.variables(0)!.valuesArray()!.map((t) => Number(t.toString().slice(0, 2))),
             cloud: hourly.variables(1)!.valuesArray()!,
           },
+          current: {
+            rel_humidity_2m: Number(current.variables(0)!.value()),
+            wind_speed: Number(current.variables(1)!.value()),
+            wind_direction: Number(current.variables(2)!.value()),
+          }
         }); 
 
         for (let i = 0; i < weatherData().hourly.time.length; i++) {
@@ -102,7 +104,11 @@ const App: Component = () => {
           for (let i = 0; i < 48; ++i) {
             let cloudy = weatherData().hourly.cloud[i+currentTime().getHours()];
             const element = <div class="forecastTile">
-            <WeatherModule>{formatTime(weatherData().hourly.time[i+currentTime().getHours()].getHours())}:00</WeatherModule>
+            <WeatherModule>
+              <Show when={gotData()} fallback={<Loading/>}>
+              {formatTime(weatherData().hourly.time[i+currentTime().getHours()].getHours())}:00
+              </Show>
+            </WeatherModule>
             <WeatherModule>{weatherData().hourly.temperature_2m[i+currentTime().getHours()]}°C</WeatherModule>
             <WeatherModule>{cloudy}%
               <Show when={cloudy < 33}>
@@ -154,6 +160,10 @@ const App: Component = () => {
           °C</h1>
         </div>
         <div class="forecast"></div>
+        <div class="relhumidity">
+          <h1>Relative humidity:</h1>
+          <h1>{weatherData().current.rel_humidity_2m}%</h1>
+        </div>
       </div>
   );
 };
